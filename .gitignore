@@ -28,3 +28,6 @@ desktop.ini
 
 # Логи
 *.log
+
+# Утилиты (одноразовые скрипты)
+migrate_sqlite_to_pg.py

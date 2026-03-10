@@ -932,8 +932,18 @@ async def cb_meal_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             )
             await query.message.delete()
             return CALENDAR_VIEW
-        except Exception:
-            pass  # fallback — покажем без фото
+        except Exception as e:
+            logger.warning("Не удалось показать фото: %s", e)
+            try:
+                await query.message.reply_photo(
+                    photo=meal["photo_file_id"],
+                    caption=text,
+                    reply_markup=kb,
+                )
+                await query.message.delete()
+                return CALENDAR_VIEW
+            except Exception as e2:
+                logger.warning("Фото недоступно: %s", e2)
 
     await query.edit_message_text(text, parse_mode="Markdown", reply_markup=kb)
     return CALENDAR_VIEW
