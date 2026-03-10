@@ -1,0 +1,30 @@
+# Секреты
+.env
+
+# База данных (Railway использует эфемерное хранилище, БД не нужна в репо)
+*.db
+*.sqlite
+*.sqlite3
+
+# Виртуальное окружение
+.venv/
+venv/
+env/
+
+# Python кэш
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Windows
+start.bat
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Логи
+*.log
