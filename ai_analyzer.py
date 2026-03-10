@@ -26,10 +26,13 @@ logger = logging.getLogger(__name__)
 
 _client = genai.Client(api_key=GOOGLE_API_KEY)
 
-# Конфигурация: отключаем thinking для скорости (gemini-2.5-flash думает по умолчанию)
-_NO_THINK = types.GenerateContentConfig(
-    thinking_config=types.ThinkingConfig(thinking_budget=0)
-)
+# Конфигурация без thinking (совместима со всеми версиями SDK)
+try:
+    _NO_THINK = types.GenerateContentConfig(
+        thinking_config=types.ThinkingConfig(thinking_budget=0)
+    )
+except Exception:
+    _NO_THINK = None
 
 # ─── Промпты ──────────────────────────────────────────────────────────────────
 
@@ -226,7 +229,7 @@ def _sync_analyze(image_bytes: bytes, description: str | None = None) -> dict:
         lambda model: _client.models.generate_content(
             model=model,
             contents=[image_part, prompt],
-            config=_NO_THINK,
+            **({} if _NO_THINK is None else {"config": _NO_THINK}),
         )
     )
     text = response.text
@@ -239,7 +242,7 @@ def _sync_analyze(image_bytes: bytes, description: str | None = None) -> dict:
 def _sync_analyze_text(description: str) -> dict:
     prompt = _TEXT_ANALYZE_PROMPT.format(description=description)
     response = _call_with_retry(
-        lambda model: _client.models.generate_content(model=model, contents=prompt, config=_NO_THINK)
+        lambda model: _client.models.generate_content(model=model, contents=prompt, **({} if _NO_THINK is None else {"config": _NO_THINK}))
     )
     text = response.text
     logger.debug("Gemini text response: %r", text)
@@ -259,7 +262,7 @@ def _sync_clarify(previous: dict, questions: list[str], answers: str) -> dict:
         answers=answers,
     )
     response = _call_with_retry(
-        lambda model: _client.models.generate_content(model=model, contents=prompt, config=_NO_THINK)
+        lambda model: _client.models.generate_content(model=model, contents=prompt, **({} if _NO_THINK is None else {"config": _NO_THINK}))
     )
     return _parse_json_response(response.text)
 
@@ -279,7 +282,7 @@ def _sync_daily_advice(meals_data: list[dict]) -> str:
         lines.append("")
     prompt = _DAILY_ADVICE_PROMPT.format(meals="\n".join(lines))
     response = _call_with_retry(
-        lambda model: _client.models.generate_content(model=model, contents=prompt, config=_NO_THINK)
+        lambda model: _client.models.generate_content(model=model, contents=prompt, **({} if _NO_THINK is None else {"config": _NO_THINK}))
     )
     return response.text
 
