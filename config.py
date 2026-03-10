@@ -5,7 +5,7 @@ load_dotenv()
 
 BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
 GOOGLE_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-DB_PATH: str = os.getenv("DB_PATH", "food_diary.db")
+DATABASE_URL: str = os.getenv("DATABASE_URL", "")
 
 # Основная и резервные модели Gemini (все поддерживают vision, бесплатно)
 GEMINI_MODEL = "gemini-2.5-flash"
@@ -18,3 +18,5 @@ if not BOT_TOKEN:
     raise ValueError("TELEGRAM_BOT_TOKEN не задан в файле .env")
 if not GOOGLE_API_KEY:
     raise ValueError("GEMINI_API_KEY не задан в файле .env")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL не задан в файле .env")
