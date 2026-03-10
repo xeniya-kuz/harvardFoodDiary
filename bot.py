@@ -9,6 +9,11 @@ import json
 import logging
 from datetime import date, datetime
 
+def _parse_dt(val):
+    if isinstance(val, datetime):
+        return val
+    return datetime.fromisoformat(val)
+
 from telegram import (
     BotCommand,
     CallbackQuery,
@@ -253,7 +258,7 @@ def fmt_day_summary(meals: list[dict]) -> str:
         "*Приёмы пищи:*",
     ]
     for i, m in enumerate(meals, 1):
-        t = datetime.fromisoformat(m["meal_time"]).strftime("%H:%M")
+        t = _parse_dt(m["meal_time"]).strftime("%H:%M")
         foods = json.loads(m.get("food_items") or "[]")
         food_str = ", ".join(foods[:2]) if foods else "не определено"
         lines.append(f"{i}. {t} — {food_str} (~{m.get('calories_estimate') or '?'} ккал)")
@@ -262,7 +267,7 @@ def fmt_day_summary(meals: list[dict]) -> str:
 
 def fmt_meal_detail(m: dict) -> str:
     foods = json.loads(m.get("food_items") or "[]")
-    t = datetime.fromisoformat(m["meal_time"]).strftime("%d.%m.%Y %H:%M")
+    t = _parse_dt(m["meal_time"]).strftime("%d.%m.%Y %H:%M")
     score = m.get("harvard_score")
 
     lines = [
@@ -384,7 +389,7 @@ async def cmd_advice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     wait_msg = await update.message.reply_text("💭 Формирую персональные советы…")
     meals_data = [
         {
-            "meal_time":          datetime.fromisoformat(m["meal_time"]).strftime("%H:%M"),
+            "meal_time":          _parse_dt(m["meal_time"]).strftime("%H:%M"),
             "food_items":         json.loads(m.get("food_items") or "[]"),
             "hunger_before":      m.get("hunger_before"),
             "satiety_after":      m.get("satiety_after"),
@@ -784,7 +789,7 @@ async def cb_advice_today(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     meals_data = [
         {
-            "meal_time":          datetime.fromisoformat(m["meal_time"]).strftime("%H:%M"),
+            "meal_time":          _parse_dt(m["meal_time"]).strftime("%H:%M"),
             "food_items":         json.loads(m.get("food_items") or "[]"),
             "hunger_before":      m.get("hunger_before"),
             "satiety_after":      m.get("satiety_after"),
@@ -890,7 +895,7 @@ async def _show_day(
 
     buttons = []
     for i, m in enumerate(meals, 1):
-        t = datetime.fromisoformat(m["meal_time"]).strftime("%H:%M")
+        t = _parse_dt(m["meal_time"]).strftime("%H:%M")
         buttons.append([
             InlineKeyboardButton(
                 f"👁 Приём {i} ({t})",
