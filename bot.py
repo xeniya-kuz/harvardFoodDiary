@@ -1425,6 +1425,18 @@ def main() -> None:
 
     app.post_init = _set_commands
 
+    async def _error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        from telegram.error import Conflict, NetworkError
+        if isinstance(context.error, Conflict):
+            logger.warning("Конфликт экземпляров (перезапуск Railway) — ожидаем завершения старого процесса")
+            return
+        if isinstance(context.error, NetworkError):
+            logger.warning("Сетевая ошибка: %s", context.error)
+            return
+        logger.error("Необработанная ошибка: %s", context.error, exc_info=context.error)
+
+    app.add_error_handler(_error_handler)
+
     logger.info("Бот запущен. Нажмите Ctrl+C для остановки.")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
