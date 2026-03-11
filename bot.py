@@ -9,7 +9,12 @@ import json
 import logging
 from datetime import date, datetime
 
-def _parse_dt(val):
+def _now() -> datetime:
+    """Текущее время в локальной таймзоне (без tzinfo — для хранения в БД)."""
+    return datetime.now(TIMEZONE).replace(tzinfo=None)
+
+
+def _parse_dt(val) -> datetime:
     if isinstance(val, datetime):
         return val
     return datetime.fromisoformat(val)
@@ -32,7 +37,7 @@ from telegram.ext import (
 )
 
 from ai_analyzer import analyze_food_photo, analyze_food_text, get_daily_advice, get_photo_datetime, refine_analysis
-from config import BOT_TOKEN
+from config import BOT_TOKEN, TIMEZONE
 from database import (
     get_meal_by_id,
     get_meal_days_in_month,
@@ -332,7 +337,7 @@ async def cmd_add(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.effective_user
     get_or_create_user(user.id, user.username, user.first_name)
     context.user_data.clear()
-    context.user_data["meal_start"] = datetime.now().isoformat()
+    context.user_data["meal_start"] = _now().isoformat()
     await update.message.reply_text(
         f"🍽 *Новый приём пищи*\n\n{HUNGER_GUIDE}\n\nВыберите цифру:",
         parse_mode="Markdown",
@@ -366,7 +371,7 @@ async def cmd_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     """Команда /calendar — открыть календарь."""
     user = update.effective_user
     get_or_create_user(user.id, user.username, user.first_name)
-    now = datetime.now()
+    now = _now()
     await update.message.reply_text(
         "📅 *Календарь питания*\n\nДни с записями отмечены точками ·\nНажмите на день, чтобы посмотреть записи:",
         parse_mode="Markdown",
@@ -459,7 +464,7 @@ async def cb_meal_new(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     query = update.callback_query
     await query.answer()
     context.user_data.clear()
-    context.user_data["meal_start"] = datetime.now().isoformat()
+    context.user_data["meal_start"] = _now().isoformat()
 
     await query.edit_message_text(
         f"🍽 *Новый приём пищи*\n\n"
@@ -688,7 +693,7 @@ async def cb_satiety(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     meal_data = {
         "photo_file_id":      context.user_data.get("photo_file_id"),
-        "meal_time":          context.user_data.get("meal_start", datetime.now().isoformat()),
+        "meal_time":          context.user_data.get("meal_start", _now().isoformat()),
         "hunger_before":      hunger,
         "food_items":         analysis.get("food_items", []),
         "description":        analysis.get("description"),
@@ -828,7 +833,7 @@ async def cb_calendar_open(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     query = update.callback_query
     await query.answer()
     user_id = update.effective_user.id
-    now = datetime.now()
+    now = _now()
 
     await query.edit_message_text(
         "📅 *Календарь питания*\n\n"
@@ -961,7 +966,7 @@ async def cb_cal_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         return await _show_day(query, user_id, selected, context)
 
     # Если день не сохранён — возвращаемся в текущий месяц
-    now = datetime.now()
+    now = _now()
     await query.edit_message_text(
         "📅 *Календарь питания*",
         parse_mode="Markdown",
@@ -1054,7 +1059,7 @@ async def msg_import_document(update: Update, context: ContextTypes.DEFAULT_TYPE
     if meal_dt:
         date_note = f"📅 {meal_dt.strftime('%d.%m.%Y %H:%M')} _(из метаданных фото)_"
     else:
-        meal_dt = datetime.now()
+        meal_dt = _now()
         date_note = f"📅 {meal_dt.strftime('%d.%m.%Y %H:%M')} _(EXIF не найден, использую текущее время)_"
 
     try:
@@ -1140,7 +1145,7 @@ async def msg_import_text(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         )
         return BULK_IMPORT
 
-    meal_dt = datetime.now()
+    meal_dt = _now()
     date_note = f"📅 {meal_dt.strftime('%d.%m.%Y %H:%M')}"
 
     context.user_data["pending_import"] = {
@@ -1301,7 +1306,7 @@ async def _hint_satiety(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
 async def _hint_calendar(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_id = update.effective_user.id
-    now = datetime.now()
+    now = _now()
     await update.message.reply_text(
         "Нажмите на день в календаре или введите /menu.",
         reply_markup=kb_calendar(user_id, now.year, now.month),

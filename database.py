@@ -5,7 +5,7 @@ from contextlib import contextmanager
 import psycopg2
 import psycopg2.extras
 
-from config import DATABASE_URL
+from config import DATABASE_URL, TIMEZONE
 
 
 @contextmanager
@@ -93,7 +93,7 @@ def save_meal(user_id: int, data: dict) -> int:
                 (
                     user_id,
                     data.get("photo_file_id"),
-                    data.get("meal_time", datetime.now().isoformat()),
+                    data.get("meal_time", datetime.now(TIMEZONE).replace(tzinfo=None).isoformat()),
                     data.get("hunger_before"),
                     json.dumps(data.get("food_items", []), ensure_ascii=False),
                     data.get("description"),
